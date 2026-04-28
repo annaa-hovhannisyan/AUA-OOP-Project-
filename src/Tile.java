@@ -15,7 +15,7 @@ public abstract class Tile{
   public abstract void landOn(Player player) //when the player lnads on that particular tile 
 
   @override 
-  public String to String(){
-    return name +"(position " + position + ")";
+  public String toString(){
+    return name + "(position " + position + ")";
   }
 }
