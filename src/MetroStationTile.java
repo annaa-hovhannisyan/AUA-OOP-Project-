@@ -1,16 +1,13 @@
 public class MetroStationTile extends Tile {
-
     private static final int BASE_RENT = 25;
     private final String color;
     private Player owner;
     private final int price = 200;
-
     public MetroStationTile(String name, int position, String color) {
         super(name, position);
         this.color = color;
         this.owner = null;
     }
-
     @Override
     public void landOn(Player player) {
         System.out.println(player.getName() + " landed on Metro Station: " + getName() + "!");
@@ -36,7 +33,6 @@ public class MetroStationTile extends Tile {
             System.out.println(player.getName() + " owns this station.");
         }
     }
-
     public Player getOwner() { return owner; }
     public String getColor()  { return color; }
 }
