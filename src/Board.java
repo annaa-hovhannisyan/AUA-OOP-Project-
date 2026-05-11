@@ -1,16 +1,11 @@
 import java.util.ArrayList;
-import java.util.List;
-
+import java.util.List; 
 public class Board {
+    private List<Tile> tiles;
     private Bank bank;
+    public static final int BOARD_SIZE = 40;
     public Board(Bank bank) {
         this.bank = bank;
-        tiles = new ArrayList<>();
-        initializeBoard();
-    }
-    private List<Tile> tiles;
-    public static final int BOARD_SIZE = 40;
-    public Board() {
         tiles = new ArrayList<>();
         initializeBoard();
     }
@@ -61,5 +56,8 @@ public class Board {
     }
     public int getSize() {
         return tiles.size();
+    }
+    public Bank getBank() {
+        return bank;
     }
 }
