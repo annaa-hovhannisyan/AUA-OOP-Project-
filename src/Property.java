@@ -1,3 +1,4 @@
+import java.util.Scanner;
 public class Property extends Tile {
     private int price;
     private int rent;
@@ -13,8 +14,8 @@ public class Property extends Tile {
     @Override
     public void landOn(Player player) {
         if (owner == null) {
-            // Ask player if they want to buy
-            System.out.println(player.getName() + " landed on " + getName() + ". Price: $" + price);
+            System.out.println(player.getName() + " landed on " + getName()
+                    + " [" + colorGroup + "]. Price: $" + price);
             System.out.println("Do you want to buy it? (yes/no)");
             Scanner sc = new Scanner(System.in);
             if (sc.nextLine().equalsIgnoreCase("yes")) {
@@ -35,9 +36,20 @@ public class Property extends Tile {
             System.out.println(player.getName() + " owns this property.");
         }
     }
-    public boolean isOwned() { return owner != null; }
-    public Player getOwner() { return owner; }
-    public int getPrice() { return price; }
-    public int getRent() { return rent; }
-    public String getColorGroup() { return colorGroup; }
+    public void setOwner(Player player) { this.owner = player; }
+    public boolean isOwned() { 
+        return owner != null; 
+    }
+    public Player getOwner() { 
+        return owner; 
+    }
+    public int getPrice() { 
+        return price; 
+    }
+    public int getRent() { 
+        return rent; 
+    }
+    public String getColorGroup() { 
+        return colorGroup; 
+    }
 }
