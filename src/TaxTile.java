@@ -1,7 +1,7 @@
 public class TaxTile extends Tile {
 
-    private int taxAmount;
-    private String color;
+    private final int taxAmount;
+    private final String color;
 
     public TaxTile(String name, int position, int taxAmount, String color) {
         super(name, position);

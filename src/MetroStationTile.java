@@ -1,9 +1,9 @@
 public class MetroStationTile extends Tile {
 
     private static final int BASE_RENT = 25;
-    private String color;
+    private final String color;
     private Player owner;
-    private int price = 200;
+    private final int price = 200;
 
     public MetroStationTile(String name, int position, String color) {
         super(name, position);
