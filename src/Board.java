@@ -2,6 +2,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
+    private Bank bank;
+    public Board(Bank bank) {
+        this.bank = bank;
+        tiles = new ArrayList<>();
+        initializeBoard();
+    }
     private List<Tile> tiles;
     public static final int BOARD_SIZE = 40;
     public Board() {
