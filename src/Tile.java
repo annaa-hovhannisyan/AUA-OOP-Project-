@@ -2,7 +2,7 @@ public abstract class Tile{
   private String name;
   private int position;
 
-  publis Tile(String name, int position){
+  public Tile(String name, int position){
     this.name = name;
     this.position = position;
   }
@@ -14,7 +14,7 @@ public abstract class Tile{
   }
   public abstract void landOn(Player player) //when the player lnads on that particular tile 
 
-  @override 
+  @Override
   public String toString(){
     return name + "(position " + position + ")";
   }
