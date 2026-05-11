@@ -1,6 +1,6 @@
 public class Bank {
     private int funds;
-    public static final int INITIAL_FUNDS = 20580; //standard Monopoly bank amount
+    public static final int INITIAL_FUNDS = 20580; 
     public Bank() {
         this.funds = INITIAL_FUNDS;
     }
@@ -12,12 +12,13 @@ public class Bank {
         } else {
             System.out.println("Bank is out of money!");
         }
-    }
+    } 
     public void collect(Player player, int amount) {
+        if (amount <= 0) return;  // guard against the useless collect(player, 0) calls
         player.subtractMoney(amount);
         funds += amount;
         System.out.println("Bank collected $" + amount + " from " + player.getName() + ". Bank remaining: $" + funds);
-    }
+    } 
     public void buyProperty(Player player, Property property) {
         if (player.getMoney() >= property.getPrice()) {
             collect(player, property.getPrice());
@@ -27,11 +28,11 @@ public class Bank {
         } else {
             System.out.println(player.getName() + " cannot afford " + property.getName());
         }
-    }
+    } 
     public void payGoSalary(Player player) {
         pay(player, 200);
-        System.out.println(player.getName() + " collected $200 salary from GO!");
-    }
+        System.out.println(player.getName() + " collected $200 salary for passing GO!");
+    } 
     public void collectTax(Player player, int amount, String reason) {
         collect(player, amount);
         System.out.println(player.getName() + " paid $" + amount + " for " + reason);
@@ -43,14 +44,11 @@ public class Bank {
     public void applyCard(Player player, int amount) {
         if (amount > 0) {
             pay(player, amount);
-            System.out.println("Card: Bank paid $" + amount + " to " + player.getName());
         } else if (amount < 0) {
             collect(player, Math.abs(amount));
-            System.out.println("Card: Bank collected $" + Math.abs(amount) + 
-                " from " + player.getName());
         }
-    }
-    public int getFunds() {
-        return funds;
+    } 
+    public int getFunds() { 
+        return funds; 
     }
 }
