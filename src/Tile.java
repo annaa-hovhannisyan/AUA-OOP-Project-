@@ -6,7 +6,7 @@ public abstract class Tile{
     this.name = name;
     this.position = position;
   }
-  public string getName(){
+  public String getName(){
     return name;
   }
   public int getPosition(){
