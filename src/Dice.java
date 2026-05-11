@@ -12,9 +12,7 @@ public class Dice {
         System.out.println("Rolled: " + lastRoll1 + " + " + lastRoll2 + " = " + (lastRoll1 + lastRoll2));
         return lastRoll1 + lastRoll2;
     }
-    public boolean isDoubles() {
-        return lastRoll1 == lastRoll2;
-    }
+    public boolean isDoubles() { return lastRoll1 == lastRoll2; }
     public int getDie1() { return lastRoll1; }
     public int getDie2() { return lastRoll2; }
 }
