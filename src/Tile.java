@@ -12,7 +12,7 @@ public abstract class Tile{
   public int getPosition(){
     return position;
   }
-  public abstract void landOn(Player player); //when the player lnads on that particular tile
+  public abstract void landOn(Player player); //when the player lands on that particular tile
 
   @Override
   public String toString(){
