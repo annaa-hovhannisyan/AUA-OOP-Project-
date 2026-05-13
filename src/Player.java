@@ -215,24 +215,10 @@ public class Player {
         return name + " | Money: $" + money + " | Position: " + position
                 + (inJail ? " [IN JAIL]" : "");
     }
-}    
-public void setPosition(int pos) { 
-        this.position = pos; 
-    }
-    public boolean isInJail() { 
-        return inJail; 
-    }
-    public void setInJail(boolean b) { 
-        this.inJail = b; 
-    }
-    public boolean isBankrupt() { 
-        return bankrupt; 
-    }
-    public List<Property> getProperties() { 
-        return properties; 
-    }
-    @Override
-    public String toString() {
-        return name + " | Money: $" + money + " | Position: " + position + (inJail ? " [IN JAIL]" : "");
-    }
+}
+@Override
+public String toString() {
+    return name + " | Money: $" + money + " | Position: " + position
+            + (inJail ? " [IN JAIL]" : "");
+}
 }
