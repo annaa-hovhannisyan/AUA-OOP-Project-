@@ -1,10 +1,12 @@
+/**
+ * Represents a deck of Chance or Community Chest cards.
+ * Handles storing and drawing cards.
+ */
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-/**
- * A shuffled deck of cards (used by both ChanceTile and CommunityChestTile).
- * Each card has a description and a cash effect (positive = receive, negative = pay).
- */
+
 public class CardDeck {
     public static class Card {
         private final String description;
