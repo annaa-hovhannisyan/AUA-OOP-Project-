@@ -1,3 +1,8 @@
+/**
+ * Stores the current state of the game.
+ * Keeps track of progress and status.
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
