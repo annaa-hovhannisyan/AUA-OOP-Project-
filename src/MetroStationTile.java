@@ -1,3 +1,8 @@
+/**
+ * Represents a metro station tile.
+ * Players can buy it and collect rent.
+ */
+
 public class MetroStationTile extends Tile {
     private static final int BASE_RENT = 25;
     private final String color;
@@ -8,6 +13,11 @@ public class MetroStationTile extends Tile {
         this.color = color;
         this.owner = null;
     }
+
+    /**
+     * Charges rent when another player lands here.
+     * @param player current player
+     */
     @Override
     public void landOn(Player player) {
         System.out.println(player.getName() + " landed on Metro Station: " + getName() + "!");
