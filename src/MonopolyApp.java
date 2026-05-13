@@ -36,7 +36,7 @@ public class BoardPanel extends JPanel {
         new Color(0x5a, 0x3e, 0x8c),
         new Color(0x0a, 0x77, 0x35),
         new Color(0x0d, 0x5c, 0xa6)
-    }
+    };
     private static final int BOARD_PX   = 724;
     private static final int CORNER_PX  = 80;
     private static final int CELL_PX    = 56;   // (724 - 2*80) / 9 ≈ 56
