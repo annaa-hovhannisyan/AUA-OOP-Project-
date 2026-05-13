@@ -1,3 +1,8 @@
+/**
+ * Represents the Jail tile.
+ * Can send or keep players in jail.
+ */
+
 import java.util.List;
 public class JailTile extends Tile {
     public static final int JAIL_POSITION = 20;
@@ -5,6 +10,8 @@ public class JailTile extends Tile {
     public JailTile(String name, int position) {
         super(name, position);
     }
+
+    
     @Override
     public void landOn(Player player) {
         System.out.println(player.getName() + " is Just Visiting Jail.");
