@@ -216,9 +216,3 @@ public class Player {
                 + (inJail ? " [IN JAIL]" : "");
     }
 }
-@Override
-public String toString() {
-    return name + " | Money: $" + money + " | Position: " + position
-            + (inJail ? " [IN JAIL]" : "");
-}
-}
