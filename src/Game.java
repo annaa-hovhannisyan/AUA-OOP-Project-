@@ -1,3 +1,8 @@
+/**
+ * Controls the main Monopoly game logic.
+ * Handles turns, movement, and game rules.
+ */
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner; 
@@ -26,6 +31,10 @@ public class Game {
         }
         System.out.println("\nAll players start with $1500. Let's play!\n");
     }
+
+    /**
+     * Starts the game loop.
+     */
     public void play() {
         System.out.println("Game started!");
         while (!isGameOver()) {
@@ -40,6 +49,10 @@ public class Game {
         }
         announceWinner();
     }
+
+    /**
+     * Switches to the next player's turn.
+     */
     private void takeTurn(Player player) {
         System.out.println("\n--- " + player.getName() + "'s turn ---");
         System.out.println(player);
