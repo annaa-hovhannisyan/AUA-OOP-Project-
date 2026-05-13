@@ -1,8 +1,18 @@
+/**
+ * Represents a Community Chest tile.
+ * Gives the player a random Community Chest card.
+ */
+
 public class CommunityChestTile extends Tile {
     private static final CardDeck deck = new CardDeck("community");
     public CommunityChestTile(String name, int position) {
         super(name, position);
     }
+
+    /**
+     * Executes the tile action.
+     * @param player current player
+     */
     @Override
     public void landOn(Player player) {
         System.out.println(player.getName() + " landed on Community Chest!");
