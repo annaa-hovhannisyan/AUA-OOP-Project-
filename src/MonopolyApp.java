@@ -1,3 +1,8 @@
+/**
+ * Main application class for the Monopoly project.
+ * Handles initialization of the game window.
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
