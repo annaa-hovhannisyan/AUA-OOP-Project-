@@ -1,8 +1,18 @@
+/**
+ * Represents a Chance tile on the board.
+ * Gives a random Chance card to the player.
+ */
+
 public class ChanceTile extends Tile {
     private static final CardDeck deck = new CardDeck("chance");
     public ChanceTile(String name, int position) {
         super(name, position);
     }
+    
+    /**
+     * Applies the Chance tile effect.
+     * @param player current player
+     */
     @Override
     public void landOn(Player player) {
         System.out.println(player.getName() + " landed on Chance!");
