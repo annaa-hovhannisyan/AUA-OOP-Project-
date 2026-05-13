@@ -1,3 +1,8 @@
+/**
+ * GUI panel responsible for drawing the Monopoly board.
+ * Displays tiles, players, and game information.
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
