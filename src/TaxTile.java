@@ -1,3 +1,8 @@
+/**
+ * Represents a tax tile on the board.
+ * Deducts money from the player.
+ */
+
 public class TaxTile extends Tile {
     private final int taxAmount;
     private final String color;
@@ -6,6 +11,11 @@ public class TaxTile extends Tile {
         this.taxAmount = taxAmount;
         this.color = color;
     }
+
+    /**
+     * Charges tax from the player.
+     * @param player current player
+     */
     @Override
     public void landOn(Player player) {
         System.out.println(player.getName() + " landed on " + getName() + ". Pay $" + taxAmount + " in taxes.");
