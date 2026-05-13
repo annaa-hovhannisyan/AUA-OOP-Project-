@@ -1,3 +1,8 @@
+/**
+ * Handles the Swing-based graphical interface.
+ * Connects the game logic with the GUI.
+ */
+
 import java.util.*;
 
 /**
