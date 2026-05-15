@@ -1,14 +1,10 @@
 /**
- * Handles the Swing-based graphical interface.
- * Connects the game logic with the GUI.
+ * Drives the game logic using the original Java classes (Board, Player, Dice, Bank, etc.)
+ * and updates GameState so the Swing UI can reflect every change.
  */
 
 import java.util.*;
 
-/**
- * Drives the game logic using the original Java classes (Board, Player, Dice, Bank, etc.)
- * and updates GameState so the Swing UI can reflect every change.
- */
 public class SwingGame {
 
     private final GameState state;
@@ -17,8 +13,8 @@ public class SwingGame {
     private final Bank      bank;
 
     // Card decks (reuse CardDeck from original code)
-    private final CardDeck chanceDeck     = new CardDeck("chance");
-    private final CardDeck communityDeck  = new CardDeck("community");
+    private final CardDeck chanceDeck    = new CardDeck("chance");
+    private final CardDeck communityDeck = new CardDeck("community");
 
     public SwingGame(GameState state, List<String> playerNames) {
         this.state = state;
@@ -45,21 +41,28 @@ public class SwingGame {
     public void doRoll() {
         if (state.phase != GameState.Phase.ROLL || state.gameOver) return;
         Player p = state.currentPlayer();
+
+        // ---- Jail handling ----
         if (p.isInJail()) {
-            long othersInJail = state.players.stream()
-                    .filter(x -> !x.equals(p) && x.isInJail() && !x.isBankrupt())
+            // If ALL 4 active players are in jail, everyone is released automatically.
+            long activeInJail = state.players.stream()
+                    .filter(x -> !x.isBankrupt() && x.isInJail())
                     .count();
-            if (othersInJail >= 1) {
-                state.addLog("🔓 Both players in jail! Everyone is released.");
+            long activeTotal = state.players.stream()
+                    .filter(x -> !x.isBankrupt())
+                    .count();
+            if (activeInJail == activeTotal && activeTotal == 4) {
+                state.addLog("🔓 All 4 players in jail! Everyone is released.");
                 state.players.forEach(x -> { if (x.isInJail()) x.releaseFromJail(); });
                 // fall through to normal roll
             } else {
+                // Player skips 2 turns before being released on the 3rd.
                 p.incrementJailTurns();
                 state.addLog("🔒 " + p.getName() + " is in jail — misses this turn. ("
-                        + p.getJailTurns() + "/3)");
-                if (p.getJailTurns() >= 3) {
+                        + p.getJailTurns() + "/2)");
+                if (p.getJailTurns() >= 2) {
                     p.releaseFromJail();
-                    state.addLog("🔓 " + p.getName() + " released from jail after 3 turns.");
+                    state.addLog("🔓 " + p.getName() + " released from jail after 2 skipped turns.");
                 }
                 nextTurn();
                 refreshBank();
@@ -67,6 +70,8 @@ public class SwingGame {
                 return;
             }
         }
+
+        // ---- Roll ----
         int total    = dice.roll();
         boolean dbls = dice.isDoubles();
         state.dice   = new int[]{ dice.getDie1(), dice.getDie2() };
@@ -77,8 +82,10 @@ public class SwingGame {
         p.move(total, board.getSize());
         int newPos = p.getPosition();
 
-        // Passed GO?
-        if (newPos < oldPos && oldPos != 0) {
+        // Only pay GO salary when the player *passes* GO (wraps around),
+        // not when they land exactly on GO (newPos == 0). The GoTile.landOn handler
+        // already pays the salary for an exact landing.
+        if (newPos < oldPos && newPos != 0) {
             bank.payGoSalary(p);
             state.addLog("⬛ " + p.getName() + " passed GO — collect $200! Balance: $" + p.getMoney());
         }
@@ -86,6 +93,10 @@ public class SwingGame {
         state.lastDoubles = dbls;
         landOn(p, board.getTile(newPos));
         refreshBank();
+
+        // Check if bank ran out of money after this turn's transactions
+        checkBankEmpty();
+
         state.fireChange();
     }
 
@@ -96,17 +107,13 @@ public class SwingGame {
         Tile   tile = state.pendingBuy;
 
         if (yes) {
-            // Use Bank to handle the transaction properly
             if (tile instanceof Property prop) {
                 bank.buyProperty(p, prop);
                 state.addLog("🏷️ " + p.getName() + " bought " + prop.getName()
                         + " for $" + prop.getPrice() + ". Balance: $" + p.getMoney());
             } else if (tile instanceof MetroStationTile metro) {
-                // MetroStationTile manages its own owner field
                 p.subtractMoney(200);
-                bank.collect(p, 0); // already subtracted; just update bank funds ref
-                // Reflect: manually update bank
-                setMetroOwner(metro, p);
+                metro.setOwner(p);
                 state.addLog("🚇 " + p.getName() + " bought " + metro.getName()
                         + " for $200. Balance: $" + p.getMoney());
             }
@@ -118,6 +125,10 @@ public class SwingGame {
         state.phase      = GameState.Phase.ROLL;
         checkBankruptAndContinue(p);
         refreshBank();
+
+        // Check if bank ran out of money after this purchase/skip
+        checkBankEmpty();
+
         state.fireChange();
     }
 
@@ -129,14 +140,8 @@ public class SwingGame {
             state.addLog("✅ " + p.getName() + " landed on GO! +$200. Balance: $" + p.getMoney());
             finishTurn(p);
 
-        } else if (pos == 30 || (tile instanceof FreeTile && pos == 30)) {
-            // "Go To Jail" tile at position 30
-            p.goToJail(JailTile.JAIL_POSITION);
-            state.addLog("🚔 " + p.getName() + " sent to Jail!");
-            finishTurn(p);
-
         } else if (tile instanceof JailTile) {
-            state.addLog("👀 " + p.getName() + " is just visiting jail.");
+            state.addLog("👀 " + p.getName() + " is in jail.");
             finishTurn(p);
 
         } else if (tile instanceof FreeTile) {
@@ -183,9 +188,6 @@ public class SwingGame {
             state.addLog("🚔 " + p.getName() + " goes to Jail!");
             finishTurn(p);
             return;
-        }
-        if (desc.contains("advance to go") || desc.contains("advance to go!")) {
-            // already paid via effect=200
         }
         checkBankruptAndContinue(p);
     }
@@ -241,24 +243,83 @@ public class SwingGame {
     private void checkBankruptAndContinue(Player p) {
         if (p.isBankrupt()) {
             state.addLog("💀 " + p.getName() + " is BANKRUPT!");
-            // Release all properties
+            // Release all owned properties back to the bank
             for (Tile t : state.tiles) {
                 if (t instanceof Property prop && prop.isOwned() && prop.getOwner().equals(p)) {
                     prop.setOwner(null);
                 }
+                if (t instanceof MetroStationTile metro && metro.getOwner() != null
+                        && metro.getOwner().equals(p)) {
+                    metro.setOwner(null);
+                }
             }
-            finishTurn(p);
+        }
+        finishTurn(p);
+    }
+
+    /**
+     * If the bank has run out of funds, end the game immediately.
+     * Winner is the non-bankrupt player who owns the most properties
+     * (Properties + MetroStationTiles combined). Ties are broken by
+     * current cash balance.
+     */
+    private void checkBankEmpty() {
+        if (state.gameOver || bank.getFunds() > 0) return;
+
+        state.addLog("🏦 The bank has run out of money! Game over — counting properties...");
+
+        List<Player> active = state.players.stream()
+                .filter(p -> !p.isBankrupt())
+                .toList();
+
+        // Count properties (Property tiles) for every active player
+        // MetroStationTiles are tracked separately in state.tiles
+        active.forEach(p -> {
+            int propCount = countAllProperties(p);
+            state.addLog("📊 " + p.getName() + ": " + propCount + " properties");
+        });
+
+        // Find winner by most properties; break ties by cash
+        Player winner = active.stream()
+                .max(Comparator
+                        .comparingInt((Player p) -> countAllProperties(p))
+                        .thenComparingInt(Player::getMoney))
+                .orElse(null);
+
+        state.gameOver   = true;
+        state.phase      = GameState.Phase.GAME_OVER;
+        state.winnerName = winner != null ? winner.getName() : null;
+
+        if (winner != null) {
+            state.addLog("🏆 " + winner.getName()
+                    + " wins with " + countAllProperties(winner) + " properties!");
         } else {
-            finishTurn(p);
+            state.addLog("No winner — everyone is bankrupt.");
         }
     }
 
+    /**
+     * Returns the total number of Properties + MetroStationTiles owned by a player.
+     */
+    public int countAllProperties(Player p) {
+        int count = 0;
+        for (Tile t : state.tiles) {
+            if (t instanceof Property prop && prop.isOwned() && prop.getOwner().equals(p)) {
+                count++;
+            } else if (t instanceof MetroStationTile metro
+                    && metro.getOwner() != null && metro.getOwner().equals(p)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private void finishTurn(Player p) {
-        // Check game over
+        // Check game over by bankruptcy (only one active player left)
         List<Player> active = state.players.stream().filter(x -> !x.isBankrupt()).toList();
         if (active.size() <= 1) {
-            state.gameOver = true;
-            state.phase    = GameState.Phase.GAME_OVER;
+            state.gameOver   = true;
+            state.phase      = GameState.Phase.GAME_OVER;
             state.winnerName = active.isEmpty() ? null : active.get(0).getName();
             state.addLog(state.winnerName != null ? "🏆 " + state.winnerName + " wins!" : "No winner.");
             return;
@@ -267,15 +328,15 @@ public class SwingGame {
         if (state.lastDoubles && !p.isInJail() && !p.isBankrupt()
                 && state.phase == GameState.Phase.ROLL) {
             state.addLog("🎲 " + p.getName() + " rolled doubles — rolls again!");
-            return; // keep same player, phase = ROLL
+            return;
         }
         nextTurn();
     }
 
     private void nextTurn() {
-        state.phase = GameState.Phase.ROLL;
+        state.phase       = GameState.Phase.ROLL;
         state.lastDoubles = false;
-        List<Player> all = state.players;
+        List<Player> all  = state.players;
         do {
             state.currentIdx = (state.currentIdx + 1) % all.size();
         } while (all.get(state.currentIdx).isBankrupt());
@@ -284,16 +345,5 @@ public class SwingGame {
 
     private void refreshBank() {
         state.bankFunds = bank.getFunds();
-    }
-
-    /** Reflectively set owner on MetroStationTile (field is private) */
-    private void setMetroOwner(MetroStationTile metro, Player p) {
-        try {
-            var f = MetroStationTile.class.getDeclaredField("owner");
-            f.setAccessible(true);
-            f.set(metro, p);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
