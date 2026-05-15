@@ -1,6 +1,5 @@
 /**
- * Represents the Monopoly game board.
- * Stores all tiles and provides access to board positions.
+ * Creates and stores all tiles that make up the Monopoly board.
  */
 
 import java.util.ArrayList;
@@ -56,12 +55,6 @@ public class Board {
         tiles.add(new TaxTile("Luxury Tax", 38, 100, "Taupe Brown"));
         tiles.add(new Property("MIT University", 39, 400, 40, "Dark Blue"));
     }
-
-    /**
-     * Returns the tile at the given position.
-     * @param position board index
-     * @return tile at the position
-     */
     public Tile getTile(int position) {
         return tiles.get(position);
     }
