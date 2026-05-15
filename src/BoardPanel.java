@@ -294,7 +294,7 @@ public class BoardPanel extends JPanel {
             g.drawString("Complex", cx - fm.stringWidth("Complex") / 2, cy + 9);
 
         } else {
-            // pos 30 = FreeTile("Republic Square", 30)
+            // pos 30 = FreeTile("Republic Square", 30) — free rest tile, nothing happens
             g.setColor(new Color(0x6b, 0x59, 0x00));
             g.setFont(new Font("Arial", Font.BOLD, 9));
             fm = g.getFontMetrics();
