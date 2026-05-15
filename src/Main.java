@@ -5,7 +5,7 @@
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== Welcome to Yerevan Monopoly! ===\n");
+        System.out.println("=== Welcome to AUA Monopoly! ===\n");
         Game game = new Game();
         game.setup();
         game.play();
