@@ -4,7 +4,7 @@ Authors: Anna Hovhannisyan and Seda Hovhannisyan
 Instructor: Varduhi Yeghiazaryan
 
 ## Description
-This is a Java implementation of the game Monopoly.
+This is a Java implementation of the famous board game Monopoly.
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ This is a Java implementation of the game Monopoly.
 
 ## 1. Project Overview
 
-AUA Monopoly – Yerevan Edition is a Java-based Monopoly adaptation set in Yerevan, Armenia. It features a fully playable board game with a Swing graphical user interface alongside a legacy text-based (console) mode.
+AUA Monopoly – Unique Edition is a Java-based Monopoly adaptation. It features a fully playable board game with a Swing graphical user interface alongside a legacy text-based (console) mode.
 
 The board uses familiar Monopoly mechanics — property ownership, rent collection, taxes, chance and community chest cards, a metro station system (railways), and a jail — but all locations are replaced with Yerevan landmarks, shops, hotels, universities, and metro stations.
 
@@ -43,7 +43,8 @@ The board uses familiar Monopoly mechanics — property ownership, rent collecti
 - Swing GUI with a live game log, player status cards, and an interactive board panel
 - Fallback console (text) mode via `Main` → `Game`
 - Card decks for Chance and Community Chest with 25 cards each
-- Jail mechanic: miss up to 3 turns; if two or more players are jailed simultaneously, all are released
+- Jail mechanic: player misses 2 turns, then is released on the 3rd; if all 4 active players are jailed simultaneously, all are released immediately
+- Bank insolvency end condition: if the bank runs out of funds, the player who owns the most properties wins
 
 ---
 
@@ -114,8 +115,8 @@ The project is split into two parallel execution paths that share the same core 
 #### Design notes
 
 - `collect` short-circuits on `amount <= 0` to prevent spurious zero-dollar transactions from logging noise.
-- `buyProperty` is the canonical purchase path for `Property` tiles; `MetroStationTile` purchases are handled differently in `SwingGame` (see §3.7).
-- The bank can go insolvent (`funds < amount` in `pay`), but the game does not currently handle this as a terminal condition; it simply prints a warning.
+- `buyProperty` is the canonical purchase path for `Property` tiles; `MetroStationTile` purchases are handled separately in `SwingGame` (see §3.7).
+- If the bank's funds reach zero, the game ends immediately and the winner is determined by property count (see §4).
 
 ---
 
@@ -160,7 +161,7 @@ Populates the tile list in order from position 0 to 39. Each tile is constructed
 | `money` | `int` | Current balance |
 | `position` | `int` | Current board position (0–39) |
 | `inJail` | `boolean` | Jail flag |
-| `jailTurns` | `int` | Consecutive turns spent in jail |
+| `jailTurns` | `int` | Consecutive turns spent in jail (max 2 before release) |
 | `properties` | `List<Property>` | Owned properties |
 | `bankrupt` | `boolean` | Set permanently to `true` when `money` reaches 0 |
 
@@ -229,7 +230,7 @@ Populates the tile list in order from position 0 to 39. Each tile is constructed
 |---|---|
 | `Game()` | Constructs all components |
 | `setup()` | Prompts for player count (2–4) and names; initialises `Player` objects with $1,500 |
-| `play()` | Main loop; calls `takeTurn` per player until `isGameOver()` |
+| `play()` | Main loop; calls `takeTurn` per player, removes bankrupt players, until `isGameOver()` |
 | `takeTurn(player)` | Handles jail check, dice roll, position update, GO salary, and `tile.landOn()` |
 | `isGameOver()` | Returns `true` when `players.size() <= 1` |
 | `announceWinner()` | Prints winner name, balance, and bank funds |
@@ -247,7 +248,7 @@ takeTurn(player)
   ├─ Press ENTER to roll
   ├─ dice.roll()
   ├─ player.move(steps, boardSize)
-  ├─ passed GO? → bank.payGoSalary(player)
+  ├─ passed GO (and not landing on GO)? → bank.payGoSalary(player)
   └─ tile.landOn(player)
 ```
 
@@ -280,7 +281,7 @@ takeTurn(player)
 | `bankFunds` | `int` | Snapshot of `Bank.getFunds()` |
 | `log` | `List<String>` | Game event log (newest first, max 60 entries) |
 | `gameOver` | `boolean` | Terminal state flag |
-| `winnerName` | `String` | Name of the winner (null if no winner) |
+| `winnerName` | `String` | Name of the winner (null if no winner yet) |
 
 #### Key methods
 
@@ -289,6 +290,7 @@ takeTurn(player)
 | `addChangeListener(Runnable)` | Registers a UI refresh callback |
 | `fireChange()` | Calls all listeners via `SwingUtilities.invokeLater` |
 | `currentPlayer()` | Returns `players.get(currentIdx)` |
+| `getCurrentPlayerName()` | Returns the active player's name |
 | `addLog(msg)` | Prepends to log; trims to 60 entries |
 | Public getters | Immutable views (`Collections.unmodifiableList`) of players, tiles, log |
 
@@ -311,8 +313,8 @@ takeTurn(player)
 | `board` | `Board` | Board instance |
 | `dice` | `Dice` | Dice instance |
 | `bank` | `Bank` | Bank instance |
-| `chanceDeck` | `CardDeck` | Chance card deck |
-| `communityDeck` | `CardDeck` | Community chest deck |
+| `chanceDeck` | `CardDeck` | Chance card deck (separate from the console path's static deck) |
+| `communityDeck` | `CardDeck` | Community chest deck (separate from the console path's static deck) |
 
 #### Constructor
 
@@ -330,22 +332,27 @@ Builds all players from the provided name list (each with $1,500), mirrors tiles
 | Method | Description |
 |---|---|
 | `landOn(player, tile)` | Dispatches to the correct handler by tile type using `instanceof` pattern matching |
-| `applyCard(player, card)` | Applies cash effect of a drawn card; handles "Go to Jail" keyword |
-| `handlePurchasable(player, Property)` | Buy prompt, rent payment, or "you own this" for a Property tile |
-| `handlePurchasable(player, MetroStationTile)` | Same for metro stations |
-| `checkBankruptAndContinue(player)` | Releases bankrupt player's properties; calls `finishTurn` |
-| `finishTurn(player)` | Checks game-over; handles doubles re-roll; advances turn |
+| `applyCard(player, card)` | Applies cash effect of a drawn card via `bank.pay`/`bank.collect`; handles "Go to Jail" keyword |
+| `handlePurchasable(player, Property)` | Buy prompt, rent payment (player-to-player), or "you own this" for a Property tile |
+| `handlePurchasable(player, MetroStationTile)` | Same for metro stations; rent goes player-to-player |
+| `checkBankruptAndContinue(player)` | Releases bankrupt player's properties back to unowned; calls `finishTurn` |
+| `checkBankEmpty()` | Ends game if `bank.getFunds() == 0`; winner determined by most properties owned |
+| `countAllProperties(player)` | Returns total Property + MetroStationTile count owned by a player |
+| `finishTurn(player)` | Checks game-over by bankruptcy; handles doubles re-roll; advances turn |
 | `nextTurn()` | Advances `currentIdx`, skipping bankrupt players |
 | `refreshBank()` | Syncs `state.bankFunds` from `bank.getFunds()` |
-| `setMetroOwner(metro, player)` | Reflectively sets the `private owner` field on `MetroStationTile` |
 
 #### Doubles rule
 
 When `state.lastDoubles` is `true` and the player is neither in jail nor bankrupt, `finishTurn` returns without advancing the turn, giving the same player another roll.
 
-#### Metro purchase workaround
+#### GO salary (Swing path)
 
-`MetroStationTile.owner` is `private` with no setter. `SwingGame.doBuy` uses reflection (`getDeclaredField + setAccessible`) to set it. This is flagged as a known design issue in §8.
+`payGoSalary` is called only when the player *passes* GO (position wraps and `newPos != 0`). Landing exactly on GO is handled by `landOn` dispatching to `GoTile`, which calls `bank.payGoSalary` once. This avoids the double-payment that would occur if both paths fired.
+
+#### Rent flow
+
+Rent payments for both `Property` and `MetroStationTile` go directly from the landing player to the owning player (`player.subtractMoney` / `owner.addMoney`) — the bank is not involved in rent collection.
 
 ---
 
@@ -510,13 +517,13 @@ Tile  (abstract)
 
 #### `GoTile`
 
-Position 0. `landOn` adds $200 to the player. In the Swing path, the bank's `payGoSalary` is used instead, so the direct `addMoney` call in `landOn` is redundant but harmless.
+Position 0. `landOn` calls `bank.payGoSalary(player)`, awarding $200. In the Swing path, `SwingGame.landOn` dispatches to this handler for an exact GO landing; the passing-GO salary is handled separately (only when `newPos != 0`) to avoid double payment.
 
 ---
 
 #### `FreeTile`
 
-Positions 10 (Cascade Complex) and 30 (Republic Square / Go To Jail). `landOn` prints a rest message. Position 30 is intercepted in `SwingGame.landOn` before `landOn` is called — the player is sent to jail there.
+Positions 10 (Cascade Complex) and 30 (Go To Jail). `landOn` logs a rest message. Position 30 is treated as "Go To Jail" — `SwingGame.landOn` checks `pos == 30` and sends the player to jail before `FreeTile.landOn` would otherwise fire.
 
 ---
 
@@ -525,27 +532,27 @@ Positions 10 (Cascade Complex) and 30 (Republic Square / Go To Jail). `landOn` p
 Position 20. Has two responsibilities:
 
 - `landOn`: "Just Visiting" message.
-- `handleJailTurn(player, allPlayers)`: Called by `Game` (console) when a jailed player's turn begins. Implements the "two players in jail → both released" rule and the 3-turn miss rule.
+- `handleJailTurn(player, allPlayers)`: Called by `Game` (console) when a jailed player's turn begins. A player skips 2 turns and is released on the 3rd. If all 4 active (non-bankrupt) players are in jail at the same time, everyone is released immediately.
 
-In the Swing path, jail logic is handled directly in `SwingGame.doRoll()`.
+In the Swing path, the equivalent jail logic is handled directly in `SwingGame.doRoll()`.
 
 ---
 
 #### `TaxTile`
 
-Positions 4, 12, 28, 38. Stores `taxAmount` and `color`. `landOn` calls `player.subtractMoney(taxAmount)`. In the Swing path, `bank.collectTax` is used instead (which also subtracts from the player but properly credits the bank).
+Positions 4, 12, 28, 38. Stores `taxAmount` and `color`. `landOn` calls `player.subtractMoney(taxAmount)` directly (console path only — bank does not receive funds in this path). In the Swing path, `bank.collectTax` is used instead.
 
 ---
 
 #### `ChanceTile`
 
-Positions 7, 22, 36. Holds a `static final CardDeck` shared across all instances. `landOn` draws a card and applies its cash effect directly to the player (no bank mediation in console path). Swing path uses `SwingGame.applyCard` via its own deck instances.
+Positions 7, 22, 36. Holds a `static final CardDeck` shared across all instances for the console path. `landOn` draws a card and applies its cash effect directly to the player (no bank mediation). The Swing path uses its own `chanceDeck` instance in `SwingGame`, mediating all cash effects through `bank.pay` / `bank.collect`.
 
 ---
 
 #### `CommunityChestTile`
 
-Positions 2, 17, 33. Identical structure to `ChanceTile` but uses the community chest deck.
+Positions 2, 17, 33. Identical structure to `ChanceTile` but uses the Community Chest deck.
 
 ---
 
@@ -557,10 +564,10 @@ Positions 5, 15, 25, 35. Represents metro stations (railways equivalent).
 |---|---|---|
 | `BASE_RENT` | `25` | Fixed fare (no scaling by stations owned) |
 | `price` | `200` | Purchase price |
-| `owner` | `Player` | Private, no setter — requires reflection in Swing path |
+| `owner` | `Player` | Private field; has both `getOwner()` and `setOwner(Player)` |
 | `color` | `"Beige"` | Visual grouping |
 
-`landOn`: if unowned, prompts to buy (console via `Scanner`). If owned by another, charges $25.
+`landOn` (console path): if unowned, prompts to buy via `Scanner`. If owned by another player, charges $25 directly (player-to-player, bank not involved). The Swing path bypasses `landOn` entirely — `SwingGame.handlePurchasable` manages the flow.
 
 ---
 
@@ -604,23 +611,24 @@ Phase: ROLL
   → doRoll():
       ├─ Jail check (miss turn or release)
       ├─ Roll dice → move player
-      ├─ Passed GO? → bank.payGoSalary (+$200)
+      ├─ Passed GO (newPos != 0)? → bank.payGoSalary (+$200)
       └─ landOn(tile)
-           ├─ GoTile → +$200, finishTurn
-           ├─ FreeTile → log, finishTurn
-           ├─ JailTile → log, finishTurn
-           ├─ pos 30 → goToJail, finishTurn
-           ├─ TaxTile → collect tax, checkBankrupt
-           ├─ ChanceTile → draw+apply card, checkBankrupt
-           ├─ CommunityChestTile → draw+apply card, checkBankrupt
+           ├─ GoTile       → bank.payGoSalary (+$200), finishTurn
+           ├─ FreeTile     → log message, finishTurn
+           ├─ JailTile     → "Just Visiting" log, finishTurn
+           ├─ pos 30       → goToJail, finishTurn
+           ├─ TaxTile      → bank.collectTax, checkBankruptAndContinue
+           ├─ ChanceTile   → draw card, applyCard, checkBankruptAndContinue
+           ├─ CommunityChestTile → draw card, applyCard, checkBankruptAndContinue
            ├─ MetroStationTile → handlePurchasable(metro)
-           └─ Property → handlePurchasable(prop)
+           └─ Property     → handlePurchasable(prop)
 
 Phase: BUY (if purchasable and player can afford it)
   → Player clicks "Buy" or "Skip"
   → doBuy(yes/no):
-      ├─ yes → bank transaction, set owner
-      └─ no → log skip
+      ├─ yes (Property)      → bank.buyProperty(player, prop)
+      ├─ yes (MetroStation)  → player.subtractMoney(200); metro.setOwner(player)
+      └─ no                  → log skip
   → phase back to ROLL, nextTurn or doubles re-roll
 ```
 
@@ -630,8 +638,8 @@ Phase: BUY (if purchasable and player can afford it)
 |---|---|
 | Land on pos 30 | Sent to jail (position = 20, `inJail = true`) |
 | Draw "Go to Jail" card | Same |
-| In jail, only player jailed | Miss turn; `jailTurns++`; after 3 turns, released |
-| Two or more players in jail simultaneously | All jailed players immediately released |
+| In jail (normal case) | Miss turn; `jailTurns++`; after 2 skipped turns, released on the 3rd |
+| All 4 active players in jail simultaneously | Everyone is released immediately |
 
 ### Doubles
 
@@ -640,17 +648,21 @@ Rolling doubles (both dice equal) grants the player an extra turn. The doubles f
 ### Bankruptcy
 
 A player is bankrupt when their balance reaches $0 or below after any payment. On bankruptcy:
-- All their owned properties are unowned (owner set to `null`).
+- All their owned `Property` and `MetroStationTile` tiles are returned to unowned (`owner = null`).
 - They are permanently skipped in the turn loop.
 - The game ends when only one non-bankrupt player remains.
 
+### Bank insolvency
+
+If the bank's funds reach $0 at any point, the game ends immediately. The winner is the non-bankrupt player with the most total properties (Properties + MetroStationTiles combined). Ties are broken by current cash balance.
+
 ### Rent
 
-Rent is flat per property — there is no house/hotel building mechanic. Metro station rent is always $25, regardless of how many stations a player owns.
+Rent is flat per property — there is no house/hotel building mechanic. Rent goes directly from the landing player to the property owner; the bank is not involved. Metro station rent is always $25, regardless of how many stations a player owns.
 
 ### GO salary
 
-$200 is paid each time a player's position wraps from a higher number to a lower number, indicating a full lap. Landing exactly on GO also pays $200.
+$200 is paid via `bank.payGoSalary` each time a player's position wraps around (passes GO) with `newPos != 0`. Landing exactly on GO also calls `bank.payGoSalary` once through `GoTile.landOn`.
 
 ---
 
@@ -714,12 +726,14 @@ MonopolyApp (ActionListener)
         ▼
 SwingGame.doRoll()
    ├── state.currentPlayer() → Player
+   ├── Jail check → skip turn or release
    ├── dice.roll() → total, doubles
    ├── player.move(total, 40)
-   ├── bank.payGoSalary() if passed GO
+   ├── bank.payGoSalary() if passed GO (newPos != 0)
    ├── board.getTile(newPos) → Tile
    ├── landOn(player, tile)
    │       └── per-tile handler updates Player, Bank, GameState
+   ├── checkBankEmpty() → end game if bank.getFunds() == 0
    ├── state.bankFunds = bank.getFunds()
    └── state.fireChange()
                 │
@@ -794,37 +808,33 @@ Rather than rebuilding the entire side panel on each change, `refreshSide` walks
 
 ## 8. Known Issues & Design Notes
 
-### Reflection workaround for `MetroStationTile.owner`
+### Board position 30 tile type
 
-`MetroStationTile` declares `owner` as `private` with no public setter. `SwingGame.setMetroOwner` uses `getDeclaredField("owner").setAccessible(true)` to set it. This is fragile (breaks under stricter JVM module access) and should be resolved by adding a `setOwner(Player)` method to `MetroStationTile`, matching the interface on `Property`.
-
-### Metro purchase double-charging
-
-In `SwingGame.doBuy`, when buying a metro station, the code calls `p.subtractMoney(200)` and then `bank.collect(p, 0)`. The `bank.collect(p, 0)` call is a no-op (guarded by the `amount <= 0` check in `Bank.collect`), meaning the bank's `funds` counter is never incremented for metro purchases. The player loses $200, but the bank does not gain it.
+Position 30 is constructed as `new FreeTile("Republic Square", 30)` but represents "Go To Jail". The distinction is made in `SwingGame.landOn` by checking `pos == 30` explicitly. A dedicated `GoToJailTile` class would improve clarity and remove the implicit special-case.
 
 ### Dual card deck instances
 
-`ChanceTile` and `CommunityChestTile` each hold a `static final` deck used in the console path. `SwingGame` creates its own separate `chanceDeck` and `communityDeck` instances. These decks are shuffled independently, so the draw order will differ between runs and between the two paths.
+`ChanceTile` and `CommunityChestTile` each hold a `static final` deck used in the console path. `SwingGame` creates its own separate `chanceDeck` and `communityDeck` instances. These decks are shuffled independently, so draw order differs between runs and between the two execution paths.
 
-### `GoTile.landOn` redundancy
+### Metro purchase bank bypass
 
-`GoTile.landOn` calls `player.addMoney(200)` directly, bypassing the bank. In the Swing path, `SwingGame.landOn` calls `bank.payGoSalary(p)` before any tile `landOn` is invoked, resulting in the player receiving $400 if they land exactly on GO via the Swing path. This is a bug: the bank's `payGoSalary` fires, then `landOn` fires and adds another $200.
+When a player buys a `MetroStationTile` in the Swing path (`SwingGame.doBuy`), the code calls `player.subtractMoney(200)` and `metro.setOwner(player)` directly — `Bank.buyProperty` is not used (it only accepts `Property`). As a result the bank's `funds` counter is never incremented for metro purchases: the player loses $200, but the bank does not gain it.
 
-### `TaxTile.landOn` bank bypass
+### Rent bypasses the bank
 
-`TaxTile.landOn` calls `player.subtractMoney(taxAmount)` directly — the bank does not receive the funds. In the Swing path, `bank.collectTax` is correctly used, and `tile.landOn` is not called. The console path leaks tax money.
+Both `Property` and `MetroStationTile` rent payments go directly between players (`player.subtractMoney` / `owner.addMoney`). The bank's ledger is unaffected by rent transactions.
 
-### No `setOwner` on `MetroStationTile` but `setOwner` on `Property`
+### Console path tax bypass
 
-Inconsistent API: `Property` has a public `setOwner(Player)` but `MetroStationTile` does not. Any future refactor should unify these under a common `Purchasable` interface.
+`TaxTile.landOn` calls `player.subtractMoney(taxAmount)` directly — the bank does not receive the funds in the console path. The Swing path correctly uses `bank.collectTax`.
 
-### Board position 30 tile type
+### No `Purchasable` interface
 
-Position 30 is constructed as `new FreeTile("Republic Square", 30)` but represents "Go To Jail". The distinction is made in `SwingGame.landOn` by checking `pos == 30` explicitly. This is misleading — a dedicated `GoToJailTile` class or at least a clear naming convention would improve clarity.
+`Property` has a public `setOwner(Player)` and `MetroStationTile` now also has `setOwner(Player)`, but they share no common interface. A `Purchasable` interface with `getPrice()`, `getOwner()`, `setOwner()`, and `isOwned()` would eliminate the duplicated `instanceof` dispatch in `SwingGame`.
 
 ### No `Board.java` import needed
 
-`Board.java` contains `import java.util.*` but all list handling is done with concrete `ArrayList` — the wildcard import is unused for any type other than `ArrayList` and `List`.
+`Board.java` contains `import java.util.*` but all list handling uses only `ArrayList` and `List`, which are part of `java.util` — the wildcard is broader than necessary.
 
 ---
 
@@ -832,12 +842,12 @@ Position 30 is constructed as `new FreeTile("Republic Square", 30)` but represen
 
 ### Requirements
 
-- Java 17 or later (uses `instanceof` pattern matching and records syntax)
+- Java 17 or later (uses `instanceof` pattern matching)
 - No external libraries — standard Java SE only
 
 ### Compile
 
-From the directory containing all `.java` files:
+From the `src/` directory containing all `.java` files:
 
 ```bash
 javac *.java
@@ -883,6 +893,3 @@ Follow the prompts: enter the number of players, then each player's name. Press 
 | `CommunityChestTile.java` | Community Chest tile |
 | `MetroStationTile.java` | Metro station (railway) tile |
 | `Property.java` | Purchasable street tile |
-
-## How to Run
-Run src  ---> javac *.java && java MonopolyApp to start the game.
