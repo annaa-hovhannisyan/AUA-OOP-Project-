@@ -41,7 +41,7 @@ public class MonopolyApp {
         JPanel side = buildSidePanel(state, game, board);
 
         // --- Main frame ---
-        JFrame frame = new JFrame("AUA Monopoly");
+        JFrame frame = new JFrame("AUA Monopoly – Unique Edition");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(8, 0));
         frame.getContentPane().setBackground(new Color(0x3a, 0x5a, 0x40));
@@ -77,8 +77,8 @@ public class MonopolyApp {
      * at the bottom.
      *
      * @param parent the parent frame for the modal dialog
-     * @param state  the shared game state
-     * @param game   the game logic driver, used to count each player's properties
+     * @param state the shared game state
+     * @param game the game logic driver, used to count each player's properties
      */
     private static void showBankEmptyWinnerDialog(JFrame parent, GameState state, SwingGame game) {
         // Sort active players: descending by property count, then by cash balance.
@@ -133,7 +133,7 @@ public class MonopolyApp {
         // Format: "{Name}: {N} properties"
         for (int i = 0; i < sorted.size(); i++) {
             Player p   = sorted.get(i);
-            int    cnt = game.countAllProperties(p);
+            int cnt = game.countAllProperties(p);
             panel.add(makePropertyRow(p, cnt, i, state));
             panel.add(Box.createVerticalStrut(6));
         }
@@ -269,7 +269,7 @@ public class MonopolyApp {
             p.add(fields[i]);
         }
         int r = JOptionPane.showConfirmDialog(null, p,
-                "AUA Monopoly – Player Setup", JOptionPane.OK_CANCEL_OPTION,
+                "AUA Monopoly – Unique Edition – Player Setup", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE);
         if (r != JOptionPane.OK_OPTION) return null;
         String[] names = new String[4];
