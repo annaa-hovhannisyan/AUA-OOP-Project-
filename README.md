@@ -6,11 +6,6 @@ Instructor: Varduhi Yeghiazaryan
 ## Description
 This is a Java implementation of the game Monopoly.
 
-# AUA Monopoly – Yerevan Edition
-## Comprehensive Project Documentation
-
----
-
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
@@ -33,8 +28,6 @@ This is a Java implementation of the game Monopoly.
 7. [UI Architecture](#7-ui-architecture)
 8. [Known Issues & Design Notes](#8-known-issues--design-notes)
 9. [How to Build & Run](#9-how-to-build--run)
-
----
 
 ## 1. Project Overview
 
