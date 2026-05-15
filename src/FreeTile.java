@@ -1,19 +1,22 @@
 /**
- * Represents a free/rest tile.
- * No action happens when landing on it.
+ * Simulates rolling two standard six-sided dice.
  */
 
-public class FreeTile extends Tile {
-    public FreeTile(String name, int position) {
-        super(name, position);
+import java.util.Random;
+public class Dice {
+    private Random random;
+    private int lastRoll1;
+    private int lastRoll2;
+    public Dice() {
+        this.random = new Random();
     }
-
-    /**
-     * Executes the free tile action.
-     * @param player current player
-     */
-    @Override
-    public void landOn(Player player) {
-        System.out.println(player.getName() + " landed on " + getName() + ". Enjoy the free rest!");
+    public int roll() {
+        lastRoll1 = random.nextInt(6) + 1;
+        lastRoll2 = random.nextInt(6) + 1;
+        System.out.println("Rolled: " + lastRoll1 + " + " + lastRoll2 + " = " + (lastRoll1 + lastRoll2));
+        return lastRoll1 + lastRoll2;
     }
+    public boolean isDoubles() { return lastRoll1 == lastRoll2; }
+    public int getDie1() { return lastRoll1; }
+    public int getDie2() { return lastRoll2; }
 }
