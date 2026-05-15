@@ -1,18 +1,15 @@
-/**
- * Controls the main Monopoly game logic.
- * Handles turns, movement, and game rules.
- */
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner; 
+import java.util.Scanner;
+
 public class Game {
     private Board board;
     private Dice dice;
     private List<Player> players;
     private int currentPlayerIndex;
     private Scanner scanner;
-    private Bank bank; 
+    private Bank bank;
+
     public Game() {
         bank = new Bank();
         board = new Board(bank);
@@ -21,6 +18,7 @@ public class Game {
         currentPlayerIndex = 0;
         scanner = new Scanner(System.in);
     }
+
     public void setup() {
         System.out.print("Enter number of players (2-4): ");
         int numPlayers = Integer.parseInt(scanner.nextLine().trim());
@@ -32,27 +30,22 @@ public class Game {
         System.out.println("\nAll players start with $1500. Let's play!\n");
     }
 
-    /**
-     * Starts the game loop.
-     */
     public void play() {
         System.out.println("Game started!");
         while (!isGameOver()) {
             Player current = players.get(currentPlayerIndex);
             takeTurn(current);
-            // Remove bankrupt players AFTER the turn
-            players.removeIf(Player::isBankrupt);
+
             if (!isGameOver()) {
-                currentPlayerIndex = currentPlayerIndex % players.size();
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+                players.removeIf(Player::isBankrupt);
+                if (!isGameOver()) {
+                    currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+                }
             }
         }
         announceWinner();
     }
 
-    /**
-     * Switches to the next player's turn.
-     */
     private void takeTurn(Player player) {
         System.out.println("\n--- " + player.getName() + "'s turn ---");
         System.out.println(player);
@@ -62,7 +55,7 @@ public class Game {
             if (player.isInJail()) {
                 return; // still in jail, skip turn
             }
-        } 
+        }
         System.out.println("Press ENTER to roll dice...");
         scanner.nextLine();
         int steps = dice.roll();
@@ -75,10 +68,12 @@ public class Game {
         Tile currentTile = board.getTile(newPosition);
         System.out.println("Landed on: " + currentTile.getName() + " (position " + newPosition + ")");
         currentTile.landOn(player);
-    } 
+    }
+
     private boolean isGameOver() {
         return players.size() <= 1;
     }
+
     private void announceWinner() {
         if (!players.isEmpty()) {
             System.out.println("\n🏆 " + players.get(0).getName() + " wins!"
@@ -88,7 +83,8 @@ public class Game {
             System.out.println("Everyone went bankrupt — no winner!");
         }
     }
-    public Bank getBank() { 
-        return bank; 
+
+    public Bank getBank() {
+        return bank;
     }
 }
