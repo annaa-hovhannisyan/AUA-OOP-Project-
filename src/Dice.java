@@ -1,6 +1,5 @@
 /**
- * Represents dice used in the game.
- * Generates random values for movement.
+ * Simulates rolling two standard six-sided dice.
  */
 
 import java.util.Random;
@@ -11,11 +10,6 @@ public class Dice {
     public Dice() {
         this.random = new Random();
     }
-
-    /**
-     * Rolls the dice.
-     * @return generated number
-     */
     public int roll() {
         lastRoll1 = random.nextInt(6) + 1;
         lastRoll2 = random.nextInt(6) + 1;
