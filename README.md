@@ -33,7 +33,7 @@ This is a Java implementation of the famous board game Monopoly.
 
 AUA Monopoly – Unique Edition is a Java-based Monopoly adaptation. It features a fully playable board game with a Swing graphical user interface alongside a legacy text-based (console) mode.
 
-The board uses familiar Monopoly mechanics — property ownership, rent collection, taxes, chance and community chest cards, a metro station system (railways), and a jail — but all locations are replaced with Yerevan landmarks, shops, hotels, universities, and metro stations.
+The board uses familiar Monopoly mechanics — property ownership, rent collection, taxes, chance and community chest cards, a metro station system (railways), and a jail — but all locations are replaced with Yerevan and international landmarks, shops, hotels, universities, and metro stations.
 
 **Key characteristics:**
 
@@ -434,7 +434,7 @@ Maps position 0–39 to a pixel `Rectangle`. The board is laid out as follows:
 - **Pos 11–19**: left column, bottom to top
 - **Pos 20** (Jail): top-left corner
 - **Pos 21–29**: top row, left to right
-- **Pos 30** (Go To Jail): top-right corner
+- **Pos 30** (Republic Square): top-right corner
 - **Pos 31–39**: right column, top to bottom
 
 #### Paint pipeline (`paintComponent`)
@@ -523,7 +523,7 @@ Position 0. `landOn` calls `bank.payGoSalary(player)`, awarding $200. In the Swi
 
 #### `FreeTile`
 
-Positions 10 (Cascade Complex) and 30 (Go To Jail). `landOn` logs a rest message. Position 30 is treated as "Go To Jail" — `SwingGame.landOn` checks `pos == 30` and sends the player to jail before `FreeTile.landOn` would otherwise fire.
+Positions 10 (Cascade Complex) and 30 (Republic Square). `landOn` logs a rest message and nothing else happens. Both are plain rest tiles — no penalties, no jail, no special intercept.
 
 ---
 
@@ -616,7 +616,6 @@ Phase: ROLL
            ├─ GoTile       → bank.payGoSalary (+$200), finishTurn
            ├─ FreeTile     → log message, finishTurn
            ├─ JailTile     → "Just Visiting" log, finishTurn
-           ├─ pos 30       → goToJail, finishTurn
            ├─ TaxTile      → bank.collectTax, checkBankruptAndContinue
            ├─ ChanceTile   → draw card, applyCard, checkBankruptAndContinue
            ├─ CommunityChestTile → draw card, applyCard, checkBankruptAndContinue
@@ -636,8 +635,6 @@ Phase: BUY (if purchasable and player can afford it)
 
 | Condition | Outcome |
 |---|---|
-| Land on pos 30 | Sent to jail (position = 20, `inJail = true`) |
-| Draw "Go to Jail" card | Same |
 | In jail (normal case) | Miss turn; `jailTurns++`; after 2 skipped turns, released on the 3rd |
 | All 4 active players in jail simultaneously | Everyone is released immediately |
 
@@ -700,7 +697,7 @@ $200 is paid via `bank.payGoSalary` each time a player's position wraps around (
 | 27 | Dilijan Hotel | Property | $260 | $22 | Green |
 | 28 | Water Works | TaxTile | — | $150 | — |
 | 29 | Tsaghkadzor Hotel | Property | $280 | $24 | Green |
-| 30 | Go To Jail | FreeTile (pos 30) | — | — | — |
+| 30 | Republic Square | FreeTile | — | — | — |
 | 31 | Paris | Property | $300 | $26 | Yellow |
 | 32 | New York | Property | $300 | $26 | Yellow |
 | 33 | Community Chest | CommunityChestTile | — | — | — |
@@ -780,7 +777,7 @@ SwingGame.doBuy(true)
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│  JFrame "AUA Monopoly – Yerevan Edition"               │
+│  JFrame "AUA Monopoly – Unique Edition"               │
 │  BorderLayout                                          │
 ├─────────────────────────────────┬──────────────────────┤
 │                                 │  Side Panel (EAST)   │
@@ -808,9 +805,9 @@ Rather than rebuilding the entire side panel on each change, `refreshSide` walks
 
 ## 8. Known Issues & Design Notes
 
-### Board position 30 tile type
+### Republic Square (pos 30) naming collision
 
-Position 30 is constructed as `new FreeTile("Republic Square", 30)` but represents "Go To Jail". The distinction is made in `SwingGame.landOn` by checking `pos == 30` explicitly. A dedicated `GoToJailTile` class would improve clarity and remove the implicit special-case.
+Two tiles share the name "Republic Square": position 25 is a `MetroStationTile` and position 30 is a `FreeTile`. Both are valid and function correctly, but the shared name could be confusing in the log output and in the board UI. Consider renaming one of them for clarity.
 
 ### Dual card deck instances
 
